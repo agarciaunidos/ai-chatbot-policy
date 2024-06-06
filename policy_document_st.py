@@ -81,18 +81,6 @@ def main():
         st.title("Select Document Type")
         selected_types = st.multiselect('Select Type:', DOCUMENT_TYPES)
 
-    # Submit button with callback to disable after clicking
-    submit_button = st.sidebar.button("Submit", on_click=lambda: st.session_state.update({'button_disabled': True}),
-                                      disabled=st.session_state.get('button_disabled', False))
-    if submit_button:
-        # Log user input purpose
-        timestamp = int(time.time())
-        user_id = st.session_state['user_id']
-        dynamodb_history.add_message(SystemMessage(st_session_id=st.session_state['session_id'],user_id = user_id, content='Purpose',
-                                                  response_metadata={
-                                                      'timestamp': timestamp,
-                                                      'user_input': user_input}))
-
     # Main chat input for queries
     user_query = st.chat_input()
     if user_query:
