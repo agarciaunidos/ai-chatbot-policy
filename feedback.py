@@ -1,7 +1,10 @@
 import streamlit as st
 from streamlit.web.server.websocket_headers import _get_websocket_headers
+from aws_secrets_initialization import dynamodb_history
+from langchain_core.messages import SystemMessage
 import jwt
 from uuid import uuid4
+import time
 import json
 import jwt
 import requests
@@ -38,9 +41,31 @@ def initialize_session_state():
     if 'session_id' not in st.session_state:
         st.session_state['session_id'] = str(uuid4())
 
+#st_session_id = st.session_state['session_id']        
+
 def main_page():
-    if st.button("Feedback"):
+    #st.write("Purpose of Using AI Tool")
+    #user_input = st.text_input("What is the purpose of using this tool?", "")
+    
+    form = st.form(key='my-form')
+    user_input = form.text_input('Enter your feedback')
+    submit = form.form_submit_button('Submit')
+
+    st.write('Press submit to have your feedback submited')
+
+    if submit:
+        #st.write(f'hello {name}')
         st.session_state.page = "next"
+        timestamp = int(time.time())
+        user_id = st.session_state['user_id']
+        dynamodb_history.add_message(SystemMessage(st_session_id=st.session_state['session_id'],user_id = user_id, content='Purpose',
+                                                  response_metadata={
+                                                      'timestamp': timestamp,
+                                                      'user_input': user_input}))
+
+
+    #if st.button("Feedback"):
+        #st.session_state.page = "next"
 
 def main_app():
     from app import main as app
@@ -48,6 +73,7 @@ def main_app():
 
 
 def app():
+    initialize_session_state()
     if "page" not in st.session_state:
         st.session_state.page = "main"
 

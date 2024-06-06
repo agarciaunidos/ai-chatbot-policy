@@ -80,8 +80,6 @@ def main():
                                    value=(2012, 2024), step=1, format="%d")
         st.title("Select Document Type")
         selected_types = st.multiselect('Select Type:', DOCUMENT_TYPES)
-        st.title("Purpose of Using AI Tool")
-        user_input = st.text_input("What is the purpose of using this tool?", "")
 
     # Submit button with callback to disable after clicking
     submit_button = st.sidebar.button("Submit", on_click=lambda: st.session_state.update({'button_disabled': True}),
