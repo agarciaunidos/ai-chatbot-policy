@@ -31,40 +31,42 @@ st.session_state['user_id'] = user
 def initialize_session_state():
     if 'session_id' not in st.session_state:
         st.session_state['session_id'] = str(uuid4())
-
-def main_page():
-    # User input form
-    form = st.form(key='feedback-form')
-    user_input = form.text_input('Enter your feedback')
-    submit = form.form_submit_button('Submit',type="primary")
-    st.write('Press submit to have your feedback submitted')
-    if submit:
-        st.session_state.page = "next"
-        timestamp = int(time.time())
-        user_id = st.session_state['user_id']
-        dynamodb_history.add_message(SystemMessage(
-            st_session_id=st.session_state['session_id'],
-            user_id=user_id,
-            content='Purpose',
-            response_metadata={
-                'timestamp': timestamp,
-                'user_input': user_input
-            }
-        ))
-
-def main_app():
-    from app import main as app_main
-    app_main()
-
-def app():
-    initialize_session_state()
     if "page" not in st.session_state:
         st.session_state.page = "main"
 
+
+def main_page():
+    with st.form(key='feedback-form'):
+        user_input = st.text_input('What is your purpose for using this tool today?')
+        submit = st.form_submit_button('Submit')
+        st.write('Press submit to have your feedback submitted')
+        if submit:
+            st.session_state.page = "next"
+            timestamp = int(time.time())
+            user_id = st.session_state['user_id']
+            dynamodb_history.add_message(SystemMessage(
+                st_session_id=st.session_state['session_id'],
+                user_id=user_id,
+                content='Purpose',
+                response_metadata={
+                    'timestamp': timestamp,
+                    'user_input': user_input
+                }
+            ))
+            st.success('Thanks for your feedback!')
+            time.sleep(1)
+            st.rerun()
+
+def main_app_selector():
+    from app_selector import main as app_selector
+    app_selector()
+
+def main():
+    initialize_session_state()
     if st.session_state.page == "main":
         main_page()
     elif st.session_state.page == "next":
-        main_app()
+        main_app_selector()
 
 if __name__ == "__main__":
-    app()
+    main()
