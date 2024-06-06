@@ -12,7 +12,6 @@ from langchain.chains.combine_documents import create_stuff_documents_chain
 # Import only necessary components
 from langchain_pinecone import PineconeVectorStore
 from langchain_core.messages import HumanMessage, AIMessage
-from langchain.retrievers import ContextualCompressionRetriever
 from langchain_cohere import CohereRerank
 from aws_secrets_initialization import PINECONE_API_KEY, INDEX_NAME, COHERE_API_KEY, llm,embeddings,dynamodb_history
 
