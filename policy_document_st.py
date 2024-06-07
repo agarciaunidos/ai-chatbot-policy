@@ -31,9 +31,9 @@ def handle_user_query(user_query, selected_years, selected_types):
         st.subheader('Answer:')
         st.write(answer)
         st.subheader('Sources:')
-        st.data_editor(sources_metadata, column_config={"Source": st.column_config.LinkColumn("Source")},
+        st.data_editor(sources_metadata, column_config={"Source": st.column_config.LinkColumn("Source"),
+                                                        "Relevance Score": st.column_config.NumberColumn("Relevance Score", format='%.2f %%')},
                        hide_index=True)
-
         # Feedback form within a Streamlit form
         with st.form('feedback_form'):
             streamlit_feedback(feedback_type="faces", optional_text_label="[Optional] Please provide an explanation", 

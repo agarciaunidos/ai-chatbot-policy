@@ -74,9 +74,10 @@ def format_search_results_as_dataframe(documents):
         doc_type = metadata.get('type', '')
         year = metadata.get('year', '')
         relevance_score = metadata.get('relevance_score', '')
+        porcentaje_relevance_score = relevance_score * 100
         if year:
             year = str(int(year))
-        results.append({"Title": title, "Page": page, "Source": source_url, "Type": doc_type, "Year": year, "Relevance Score" : relevance_score})
+        results.append({"Title": title, "Page": page, "Source": source_url, "Type": doc_type, "Year": year, "Relevance Score" : porcentaje_relevance_score})
     return pd.DataFrame(results)
 
 def format_answer_sources(documents):
