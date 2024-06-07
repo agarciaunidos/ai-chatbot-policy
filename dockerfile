@@ -9,5 +9,3 @@ RUN pip --no-cache-dir install -r requirements.txt
 EXPOSE 8501
 
 CMD ["streamlit", "run", "app.py"]
-
-

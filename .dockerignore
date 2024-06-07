@@ -1,0 +1,6 @@
+__pycache__/
+
+# Ignorar otros archivos y carpetas comunes que no deberían ser incluidos
+.git
+*.pyc
+venv/
