@@ -12,7 +12,7 @@ INDEX_NAME = 'uus-policy-docs'
 MODEL_ID = "anthropic.claude-3-sonnet-20240229-v1:0"
 MODEL_ID_OPUS = 'anthropic.claude-3-opus-20240229-v1:0'
 SESSION_TABLE_NAME = "SessionTable"
-SESSION_ID = "test"
+SESSION_ID = "87"
 
 # Setup AWS boto3 session and clients
 aws_session = boto3.session.Session(region_name=REGION_NAME)

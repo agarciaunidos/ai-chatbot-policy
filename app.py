@@ -7,7 +7,7 @@ import time
 import jwt
 
 # Main application title
-st.title("Policy Library Project TEST - DEV")
+st.title("Policy Library Project")
 st.caption("A Digital Services Project")
 
 def process_session_token_access():
@@ -39,7 +39,6 @@ def main_page():
     with st.form(key='feedback-form'):
         user_input = st.text_input('What is your purpose for using this tool today?')
         submit = st.form_submit_button('Submit')
-        st.write('Press submit to have your feedback submitted')
         if submit:
             st.session_state.page = "next"
             timestamp = int(time.time())
