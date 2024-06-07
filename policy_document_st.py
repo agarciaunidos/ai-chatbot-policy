@@ -4,7 +4,7 @@ from uuid import uuid4
 import time
 
 # Import customized modules for specific functionalities
-from app import handle_query_retrieval
+from document_retrieval import handle_query_retrieval
 from aws_secrets_initialization import dynamodb_history
 from streamlit_feedback import streamlit_feedback
 from langchain_core.messages import SystemMessage

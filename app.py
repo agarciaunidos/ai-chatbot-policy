@@ -1,98 +1,72 @@
-
 import streamlit as st
-import pandas as pd
-import pinecone
+from streamlit.web.server.websocket_headers import _get_websocket_headers
+from aws_secrets_initialization import dynamodb_history
+from langchain_core.messages import SystemMessage
+from uuid import uuid4
 import time
+import jwt
 
-# Consolidate imports from the same library
-from langchain import hub
-from langchain.chains import create_retrieval_chain
-from langchain.chains.combine_documents import create_stuff_documents_chain
-from langchain_cohere import CohereRerank
-from langchain.retrievers.contextual_compression import ContextualCompressionRetriever
+# Main application title
+st.title("Policy Library Project TEST - DEV")
+st.caption("A Digital Services Project")
 
-# Import only necessary components
-from langchain_pinecone import PineconeVectorStore
-from langchain_core.messages import HumanMessage, AIMessage
-from aws_secrets_initialization import PINECONE_API_KEY, INDEX_NAME, COHERE_API_KEY, llm,embeddings,dynamodb_history
+def process_session_token_access():
+    """
+    WARNING: This function uses unsupported features of Streamlit.
+    It decodes the session token without verifying its authenticity.
+    It works well with the latest version of Streamlit (1.27).
+    """
+    headers = _get_websocket_headers()
+    if not headers or "X-Amzn-Oidc-Accesstoken" not in headers:
+        return {}
+    return jwt.decode(headers["X-Amzn-Oidc-Accesstoken"], algorithms=["ES256"], options={"verify_signature": False})
 
-# Initialize services
-retrieval_qa_chat_prompt = hub.pull("langchain-ai/retrieval-qa-chat")
-documents_chain = create_stuff_documents_chain(llm, retrieval_qa_chat_prompt)
-compressor = CohereRerank(top_n = 20,cohere_api_key = COHERE_API_KEY)
+# Process session token and get user information
+access_token = process_session_token_access()
+user = access_token.get("sub", "Unknown User")
+st.write('Welcome: ', user)
+st.session_state['user_id'] = user
+
+# Initialize session state
+def initialize_session_state():
+    if 'session_id' not in st.session_state:
+        st.session_state['session_id'] = str(uuid4())
+    if "page" not in st.session_state:
+        st.session_state.page = "main"
 
 
-def generate_filter_conditions(selected_years, doc_types=None):
-    """Creates and returns filter conditions based on selected years and document types."""
-    conditions = {"year": {"$gte": selected_years[0], "$lte": selected_years[1]}}
-    if doc_types and "ALL" not in doc_types:
-        conditions["type"] = {"$in": doc_types}
-    return conditions
+def main_page():
+    with st.form(key='feedback-form'):
+        user_input = st.text_input('What is your purpose for using this tool today?')
+        submit = st.form_submit_button('Submit')
+        st.write('Press submit to have your feedback submitted')
+        if submit:
+            st.session_state.page = "next"
+            timestamp = int(time.time())
+            user_id = st.session_state['user_id']
+            dynamodb_history.add_message(SystemMessage(
+                st_session_id=st.session_state['session_id'],
+                user_id=user_id,
+                content='Purpose',
+                response_metadata={
+                    'timestamp': timestamp,
+                    'user_input': user_input
+                }
+            ))
+            st.success('Thanks for your feedback!')
+            time.sleep(1)
+            st.rerun()
 
-def initialize_vector_store(index_name):
-    """Sets up a Pinecone Vector Store for the given index name and returns it."""
-    pinecone_client = pinecone.Pinecone(api_key=PINECONE_API_KEY)
-    index = pinecone_client.Index(index_name)
-    text_field = "text"
-    vector_store = PineconeVectorStore(index, embeddings, text_field)
-    return vector_store
+def main_app_selector():
+    from app_selector import main as app_selector
+    app_selector()
 
-def handle_query_retrieval(query, selected_years, doc_types):
-    """Processes the user query, retrieves the information, and returns the answer along with sources."""
-    id = st.session_state["id"]
-    st_session_id = st.session_state["session_id"]
-    user_id = st.session_state["user_id"]
-    try:
-        conditions = generate_filter_conditions(selected_years, doc_types)
-        vector_store = initialize_vector_store(INDEX_NAME)
-        base_retriever = vector_store.as_retriever(search_kwargs={'filter': conditions, 'k': 20})
-        compression_retriever = ContextualCompressionRetriever(base_compressor=compressor, base_retriever=base_retriever)
-        retrieval_chain = create_retrieval_chain(compression_retriever, documents_chain)
-        filter_details = f"Applying filters: Years {selected_years[0]}-{selected_years[1]}, Types: {', '.join(doc_types) if doc_types else 'All types'}"
-        response = retrieval_chain.invoke({"input": query, "filter": filter_details})
-        sources_df = format_search_results_as_dataframe(response['context'])
-        ai_sources = format_answer_sources(response['context'])
-        ai_answer = response['answer']
-        timestamp = int(time.time())
-        dynamodb_history.add_user_message(HumanMessage(id=id, st_session_id = st_session_id, user_id = user_id,content=query,response_metadata={'timestamp': timestamp}))
-        dynamodb_history.add_ai_message(AIMessage(id=id,st_session_id = st_session_id, user_id = user_id, content=ai_answer, 
-                                                  response_metadata={'timestamp': timestamp,
-                                                                     'source documents': ai_sources}))
-        return ai_answer, sources_df
-    except Exception as error:
-        st.error(f"Error processing the query: {error}")
-        return None, None
+def main():
+    initialize_session_state()
+    if st.session_state.page == "main":
+        main_page()
+    elif st.session_state.page == "next":
+        main_app_selector()
 
-def format_search_results_as_dataframe(documents):
-    """Converts search results into a pandas DataFrame for display."""
-    results = []
-    for document in documents:
-        metadata = document.metadata
-        title = metadata.get('title', '')
-        page = metadata.get('page', '')
-        source_url = metadata.get('source', '').replace('s3://', 'https://s3.amazonaws.com/')
-        doc_type = metadata.get('type', '')
-        year = metadata.get('year', '')
-        relevance_score = metadata.get('relevance_score', '')
-        porcentaje_relevance_score = relevance_score * 100
-        if year:
-            year = str(int(year))
-        results.append({"Title": title, "Page": page, "Source": source_url, "Type": doc_type, "Year": year, "Relevance Score" : porcentaje_relevance_score})
-    return pd.DataFrame(results)
-
-def format_answer_sources(documents):
-    """Converts search results into a formatted string for display."""
-    results = []
-    for document in documents:
-        metadata = document.metadata
-        title = metadata.get('title', '')
-        source_url = metadata.get('source', '').replace('s3://', 'https://s3.amazonaws.com/')
-        doc_type = metadata.get('type', '')
-        year = metadata.get('year', '')
-        if year:
-            year = str(int(year))
-        # Append each formatted line for the document
-        results.append(f"Title: {title}, Source: {source_url}, Type: {doc_type}, Year: {year}")
-    # Join all results into a single string with each entry on a new line
-    return "\n".join(results)
-
+if __name__ == "__main__":
+    main()
