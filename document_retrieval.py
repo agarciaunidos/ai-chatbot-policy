@@ -3,6 +3,7 @@ import streamlit as st
 import pandas as pd
 import pinecone
 import time
+import json 
 
 # Consolidate imports from the same library
 from langchain import hub
@@ -14,7 +15,7 @@ from langchain.retrievers.contextual_compression import ContextualCompressionRet
 # Import only necessary components
 from langchain_pinecone import PineconeVectorStore
 from langchain_core.messages import HumanMessage, AIMessage
-from aws_secrets_initialization import PINECONE_API_KEY, INDEX_NAME, COHERE_API_KEY, llm,embeddings,dynamodb_history
+from aws_secrets_initialization import PINECONE_API_KEY, INDEX_NAME, COHERE_API_KEY, FUNCTION_NAME, llm,embeddings,dynamodb_history,lambda_client
 
 # Initialize services
 retrieval_qa_chat_prompt = hub.pull("langchain-ai/retrieval-qa-chat")
@@ -58,10 +59,28 @@ def handle_query_retrieval(query, selected_years, doc_types):
         dynamodb_history.add_ai_message(AIMessage(id=id,st_session_id = st_session_id, user_id = user_id, content=ai_answer, 
                                                   response_metadata={'timestamp': timestamp,
                                                                      'source documents': ai_sources}))
+        try:
+            handle_prompt(id, st_session_id , user_id ,query)
+        except Exception as e:
+            print(f"Error: {e}")
         return ai_answer, sources_df
     except Exception as error:
         st.error(f"Error processing the query: {error}")
         return None, None
+
+def handle_prompt(id, st_session_id , user_id ,content):
+
+    payload = {
+    "id": id,
+    "st_session_id": st_session_id,
+    "user_id": user_id,
+    "content": content}
+
+    response = lambda_client.invoke(
+    FunctionName=FUNCTION_NAME,
+    InvocationType='RequestResponse', 
+    Payload=json.dumps(payload)
+)
 
 def format_search_results_as_dataframe(documents):
     """Converts search results into a pandas DataFrame for display."""

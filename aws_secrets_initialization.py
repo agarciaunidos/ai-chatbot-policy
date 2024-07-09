@@ -9,15 +9,18 @@ from langchain_aws import ChatBedrock
 REGION_NAME = 'us-east-1'
 REGION_NAME_BEDROCK = 'us-east-1'
 INDEX_NAME = 'uus-policy-docs'
-MODEL_ID = "anthropic.claude-3-sonnet-20240229-v1:0"
+MODEL_ID = "anthropic.claude-3-5-sonnet-20240620-v1:0"
 MODEL_ID_OPUS = 'anthropic.claude-3-opus-20240229-v1:0'
 SESSION_TABLE_NAME = "SessionTable"
 SESSION_ID = "87"
+FUNCTION_NAME = 'policy-app-prompt-pinecone'
+
 
 # Setup AWS boto3 session and clients
 aws_session = boto3.session.Session(region_name=REGION_NAME)
 secrets_manager_client = aws_session.client(service_name='secretsmanager')
 bedrock_client = boto3.client("bedrock-runtime", region_name=REGION_NAME_BEDROCK)
+lambda_client = boto3.client('lambda', region_name=REGION_NAME) 
 
 # Initialize Langchain components
 dynamodb_history = DynamoDBChatMessageHistory(table_name=SESSION_TABLE_NAME, session_id=SESSION_ID, boto3_session=aws_session)

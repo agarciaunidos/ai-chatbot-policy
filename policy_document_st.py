@@ -86,7 +86,7 @@ def main():
     if user_query:
         handle_user_query(user_query, selected_years, selected_types)
     else:
-        st.error("Please enter a query.")
+        st.error("Please enter your prompt.")
 
 if __name__ == "__main__":
     main()
