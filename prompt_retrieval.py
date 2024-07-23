@@ -2,11 +2,12 @@ import streamlit as st
 import pinecone
 import boto3
 import json
+from aws_secrets_initialization import pinecone_api_key, pinecone_index_name
 
 # Initialize AWS Bedrock client
 bedrock_client = boto3.client("bedrock-runtime", region_name='us-east-1')
 # Initialize Pinecone
-pc = pinecone.Pinecone(api_key="8bb04632-deb3-4240-9e7b-6033af55b676")
+pc = pinecone.Pinecone(api_key=pinecone_api_key)
 pinecone_index_name = 'uus-policy-prompts'
 index = pc.Index(pinecone_index_name)
 model_kwargs = {"dimensions": 256}
