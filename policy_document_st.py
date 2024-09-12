@@ -2,6 +2,7 @@ import streamlit as st
 from datetime import datetime
 from uuid import uuid4
 import time
+import streamlit.components.v1 as components
 
 # Import customized modules for specific functionalities
 from document_retrieval import handle_query_retrieval
@@ -97,6 +98,13 @@ def main():
 
     # Sidebar configuration for document filtering
     with st.sidebar:
+        st.header("Contact Us")
+        # Create the email link using HTML
+        email = "apatricio@unidosus.org"
+        email_html = f'<a href="mailto:{email}">{email}</a>'
+        # Display the email link in the sidebar
+        st.markdown("To report any suggestion or error, contact us at:")
+        components.html(email_html, height=30)
         st.title("Select Time Period")
         selected_years = st.slider("Year", min_value=MIN_YEAR, max_value=MAX_YEAR, 
                                    value=(2012, 2024), step=1, format="%d")
